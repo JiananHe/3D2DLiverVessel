@@ -79,7 +79,8 @@ def project_centerline_points(branches_points, single_dsa_dcm, ct_dcm_folder, tx
     source_point, origin_2d, origin_3d, plane_normal, source_to_detector = get_projection_parameters(single_dsa_dcm, ct_dcm_folder)
     projected_points = []
     for branch_points in branches_points:
-        pp = trans_rotate_points(np.array(branch_points), source_point, origin_3d, plane_normal, tx, ty, tz, rx, ry, rz)
+        # pp = trans_rotate_points(np.array(branch_points), source_point, origin_3d, plane_normal, tx, ty, tz, rx, ry, rz)
+        pp = rotate_points(branch_points, -30.1, -20.6, 765)
         pp = project_points(pp, [0, 0, 0], [0, 0, source_to_detector], [0, 0, 1])
         # pp = project_points(np.array(branch_points), source_point, origin_2d, plane_normal)
         projected_points.append(pp)
@@ -137,15 +138,68 @@ def trans_rotate_points(points, source_point, origin_3d, plane_normal, tx, ty, t
     return points
 
 
-if __name__ == '__main__':
-    root, _ = construct_tree_from_txt(r"data/vessel_centerline.txt")
-    branches_points = get_branches_points(root.get_next_segment().get_next_segment())
+def rotate_points(points, primary, secondary, SOD):
+    R_p = np.array([[np.cos(primary), 0, np.sin(primary)], [0, 1, 0], [-np.sin(primary), 0, np.cos(primary)]])
 
-    tx = 0; ty = 0; tz = 0; rx = 0; ry = 0; rz = 0
-    for ry in range(0, 1, 30):
-        projected_points, source_point, origin_2d, plane_normal = project_centerline_points(branches_points,
-                                                     r"../LiverVesselData/Cao ShenFu/Cao ShenFu-DSA1  20200225/1/Cao ShenFu-DSA1_10.DCM",
-                                                     r"../LiverVesselData/Cao ShenFu/CT CaoShenFu  20190307/vein",
-                                                                                            tx, ty, tz, rx, ry, rz)
-        show_branches(projected_points, source_point, origin_2d, plane_normal, fix_color=False, show_window=True,
-                      window_save_name="%d-%d-%d-%d-%d-%d.png" % (tx, ty, tz, rx, ry, rz))
+    new_axis = np.matmul(R_p.T, np.array([[1], [0], [0]]))
+    new_axis = new_axis / np.sqrt(np.sum(new_axis ** 2))
+    new_coord = np.matmul(new_axis, new_axis.T)
+
+    R_s = new_coord + np.cos(secondary) * (np.eye(3) - new_coord) + \
+          np.sin(secondary) * np.array(
+        [[0, -new_axis[2], new_axis[1]], [new_axis[2], 0, -new_axis[0]], [-new_axis[1], new_axis[0], 0]])
+    R = np.hstack([np.matmul(R_p, R_s), np.array([[0], [0], [-SOD]])])
+
+    bp = np.array(points)
+    bp = np.hstack([bp, np.ones((bp.shape[0], 1))]).T
+    rp = np.matmul(R, bp)
+    return rp.T
+
+
+def projector(branches_points, primary, secondary, SOD, SID, n_u, n_v):
+    primary = primary * np.pi / 180
+    secondary = secondary * np.pi / 180
+
+    P = np.array([[-SID, 0, -n_u], [0, -SID, -n_v], [0, 0, 1]])
+
+    R_p = np.array([[np.cos(primary), 0, np.sin(primary)], [0, 1, 0], [-np.sin(primary), 0, np.cos(primary)]])
+
+    new_axis = np.matmul(R_p.T, np.array([[1], [0], [0]]))
+    new_axis = new_axis / np.sqrt(np.sum(new_axis ** 2))
+    new_coord = np.matmul(new_axis, new_axis.T)
+
+    R_s = new_coord + np.cos(secondary) * (np.eye(3) - new_coord) + \
+          np.sin(secondary) * np.array([[0, -new_axis[2], new_axis[1]], [new_axis[2], 0, -new_axis[0]], [-new_axis[1], new_axis[0], 0]])
+    R = np.hstack([np.matmul(R_p, R_s), np.array([[0], [0], [-SOD]])])
+
+    projected_points = []
+    for branch_points in branches_points:
+        bp = np.array(branch_points)
+        bp = np.hstack([bp, np.ones((bp.shape[0], 1))]).T
+        rp = np.matmul(R, bp)
+        pp = np.matmul(P, rp)
+        pp = pp / pp[2, :]
+        projected_points.append(pp.T)
+
+    return projected_points
+
+
+if __name__ == '__main__':
+    # root, _ = construct_tree_from_txt(r"data/vessel_centerline.txt")
+    root, _ = construct_tree_from_txt("../Data/coronary/CAI_TIE_ZHU/CTA/CAI TIE ZHU_Left.txt", 1, 2, [9])
+    # root, _ = construct_tree_from_txt("../Data/coronary/CAI_TIE_ZHU/CTA/CAI TIE ZHU_Right.txt", 3, 2, [4])
+    branches_points = get_branches_points(root)
+
+    # projected_points = projector(branches_points, 1.5, -22.401, 765, 999, 256, 256)
+    # projected_points = projector(branches_points, -30.1, -20.6, 765, 1113, 256, 256)
+    # projected_points = projector(branches_points, 41.8, -0.3, 765, 944, 256, 256)
+    # show_branches(projected_points, fix_color=False, show_window=True)
+
+    tx = 0; ty = 0; tz = 0; rx = -90; ry = -90; rz = 180
+    # for ry in range(90, 91, 30):
+    projected_points, source_point, origin_2d, plane_normal = project_centerline_points(branches_points,
+                                                                                        r"../LiverVesselData/Cao ShenFu/Cao ShenFu-DSA1  20200225/1/Cao ShenFu-DSA1_10.DCM",
+                                                                                        r"../LiverVesselData/Cao ShenFu/CT CaoShenFu  20190307/vein",
+                                                                                        tx, ty, tz, rx, ry, rz)
+    show_branches(projected_points, fix_color=False, show_window=True,
+                  window_save_name="%d-%d-%d-%d-%d-%d.png" % (tx, ty, tz, rx, ry, rz))
