@@ -40,8 +40,16 @@ def get_background_render(image_path):
     return image_data, background_renderer
 
 
-def show_branches(branches_points, bg_image_path=None, fix_color=False, vessel_stl=None, liver_stl=None,
+def show_branches(branches_points, branch_idx=None, bg_image_path=None, fix_color=False, vessel_stl=None, liver_stl=None,
                   show_coordinate=False, show_window=True, window_save_name=None):
+    if branch_idx is not None:
+        sid = 0
+        split_branches = []
+        for bid in branch_idx:
+            split_branches.append(branches_points[sid:sid+bid, :])
+            sid += bid
+        branches_points = split_branches
+
     lines_actors = []
     for bid, branch_points in enumerate(branches_points):
         vtk_points = vtk.vtkPoints()
@@ -169,7 +177,7 @@ if __name__ == '__main__':
     branches_points2 = get_branches_points(root2)
     branches_points = branches_points1 + branches_points2
 
-    show_branches(branches_points2, vessel_stl=["../Data/coronary/CAI_TIE_ZHU/CTA/CAI TIE ZHU_Left_002.stl",
+    show_branches(branches_points1, vessel_stl=["../Data/coronary/CAI_TIE_ZHU/CTA/CAI TIE ZHU_Left_002.stl",
                                                 "../Data/coronary/CAI_TIE_ZHU/CTA/CAI TIE ZHU_Right_002.stl"])
     # show_branches(branches_points1, "../Data/coronary/CAI_TIE_ZHU/DSA/IM000001_1.jpg",
     #               vessel_stl=["../Data/coronary/CAI_TIE_ZHU/CTA/CAI TIE ZHU_Left_002.stl",

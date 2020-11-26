@@ -235,6 +235,7 @@ def get_branches_points(root: segmentNode):
 
 
 if __name__ == '__main__':
-    root_segment, segments_dict = construct_tree_from_txt("../Data/coronary/CAI_TIE_ZHU/CTA/CAI TIE ZHU_Right.txt", 3, 2, [4])
+    root_segment, segments_dict = construct_tree_from_txt("../Data/coronary/CAI_TIE_ZHU/CTA/CAI TIE ZHU_Left.txt", 1, 2, [9])
     traverse_tree(root_segment, list(segments_dict.keys()))
     points = get_branches_points(root_segment)
+    print(len(points))

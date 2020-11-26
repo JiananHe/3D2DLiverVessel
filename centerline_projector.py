@@ -186,8 +186,8 @@ def projector(branches_points, primary, secondary, SOD, SID, n_u, n_v):
 
 if __name__ == '__main__':
     # root, _ = construct_tree_from_txt(r"data/vessel_centerline.txt")
-    root, _ = construct_tree_from_txt("../Data/coronary/CAI_TIE_ZHU/CTA/CAI TIE ZHU_Left.txt", 1, 2, [9])
-    # root, _ = construct_tree_from_txt("../Data/coronary/CAI_TIE_ZHU/CTA/CAI TIE ZHU_Right.txt", 3, 2, [4])
+    # root, _ = construct_tree_from_txt("../Data/coronary/CAI_TIE_ZHU/CTA/CAI TIE ZHU_Left.txt", 1, 2, [9])
+    root, _ = construct_tree_from_txt("../Data/coronary/CAI_TIE_ZHU/CTA/CAI TIE ZHU_Right.txt", 3, 2, [4])
     branches_points = get_branches_points(root)
 
     # projected_points = projector(branches_points, 1.5, -22.401, 765, 999, 256, 256)
