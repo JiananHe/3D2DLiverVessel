@@ -1,5 +1,6 @@
 import vtk
 import numpy as np
+import os
 from centeline_tree_reader import construct_tree_from_txt, get_branches_points
 np.random.seed(0)
 
@@ -40,18 +41,14 @@ def get_background_render(image_path):
     return image_data, background_renderer
 
 
-def show_branches(branches_points, branch_idx=None, bg_image_path=None, fix_color=False, vessel_stl=None, liver_stl=None,
-                  show_coordinate=False, show_window=True, window_save_name=None):
-    if branch_idx is not None:
-        sid = 0
-        split_branches = []
-        for bid in branch_idx:
-            split_branches.append(branches_points[sid:sid+bid, :])
-            sid += bid
-        branches_points = split_branches
-
+def show_branches(branches_points, branch_idx, show_shape, bg_image_path=None, fix_color=False, vessel_stl=None, liver_stl=None,
+                  show_window=True, save_name=None, save_dir=None):
     lines_actors = []
-    for bid, branch_points in enumerate(branches_points):
+    sid = 0
+    for bid in branch_idx:
+        branch_points = branches_points[sid: sid+bid, :]
+        sid += bid
+
         vtk_points = vtk.vtkPoints()
         for i, bp in enumerate(branch_points):
             vtk_points.InsertPoint(i, *bp)
@@ -101,6 +98,7 @@ def show_branches(branches_points, branch_idx=None, bg_image_path=None, fix_colo
     if bg_image_path is None:
         scene_renderer.SetBackground(1, 1, 1)
         render_window.AddRenderer(scene_renderer)
+        render_window.SetSize(*show_shape)
         iren.SetRenderWindow(render_window)
     else:
         bg_image_data, background_renderer = get_background_render(bg_image_path)
@@ -136,9 +134,6 @@ def show_branches(branches_points, branch_idx=None, bg_image_path=None, fix_colo
         camera.SetFocalPoint(xc, yc, 0.0)
         camera.SetPosition(xc, yc, d)
 
-    # Render again to set the correct view
-    render_window.Render()
-
     # camera
     # camera = vtk.vtkCamera()
     # camera.SetPosition(source_point)
@@ -147,7 +142,19 @@ def show_branches(branches_points, branch_idx=None, bg_image_path=None, fix_colo
     # camera.ComputeViewPlaneNormal()
     # ren1.SetActiveCamera(camera)
 
-    if window_save_name is not None:
+    if show_window:
+        render_window.Render()
+
+        interactor = vtk.vtkRenderWindowInteractor()
+        interactor.SetInteractorStyle(vtk.vtkInteractorStyleTrackballCamera())
+        interactor.SetRenderWindow(render_window)
+
+        render_window.Render()
+        if save_name is None:
+            iren.Start()
+
+    if save_name is not None:
+        render_window.Render()
         windowToImageFilter = vtk.vtkWindowToImageFilter()
         windowToImageFilter.SetInput(render_window)
         # windowToImageFilter.SetMagnification(3)
@@ -156,29 +163,27 @@ def show_branches(branches_points, branch_idx=None, bg_image_path=None, fix_colo
         windowToImageFilter.Update()
 
         pngWriter = vtk.vtkPNGWriter()
-        pngWriter.SetFileName("data/centerline_projections/" + window_save_name)
+        if save_dir is None:
+            pngWriter.SetFileName("data/centerline_projections/" + save_name)
+        else:
+            pngWriter.SetFileName(os.path.join(save_dir, save_name))
+
         pngWriter.SetInputData(windowToImageFilter.GetOutput())
         pngWriter.Write()
-        print("saved as %s" % window_save_name)
-
-    if show_window:
-        interactor = vtk.vtkRenderWindowInteractor()
-        interactor.SetInteractorStyle(vtk.vtkInteractorStyleTrackballCamera())
-        interactor.SetRenderWindow(render_window)
-
-        render_window.Render()
-        iren.Start()
+        print("saved as %s" % save_name)
+    del render_window
 
 
 if __name__ == '__main__':
     root1, _ = construct_tree_from_txt("../Data/coronary/CAI_TIE_ZHU/CTA/CAI TIE ZHU_Left.txt", 1, 2, [9])
     root2, _ = construct_tree_from_txt("../Data/coronary/CAI_TIE_ZHU/CTA/CAI TIE ZHU_Right.txt", 3, 2, [4])
-    branches_points1 = get_branches_points(root1)
-    branches_points2 = get_branches_points(root2)
-    branches_points = branches_points1 + branches_points2
+    branches_points1, branches_index1 = get_branches_points(root1)
+    branches_points2, branches_index2 = get_branches_points(root2)
+    # branches_points = branches_points1 + branches_points2
 
-    show_branches(branches_points1, vessel_stl=["../Data/coronary/CAI_TIE_ZHU/CTA/CAI TIE ZHU_Left_002.stl",
-                                                "../Data/coronary/CAI_TIE_ZHU/CTA/CAI TIE ZHU_Right_002.stl"])
+    show_branches(branches_points1, branches_index1, (512, 512),
+                  vessel_stl=["../Data/coronary/CAI_TIE_ZHU/CTA/CAI TIE ZHU_Left_002.stl",
+                              "../Data/coronary/CAI_TIE_ZHU/CTA/CAI TIE ZHU_Right_002.stl"])
     # show_branches(branches_points1, "../Data/coronary/CAI_TIE_ZHU/DSA/IM000001_1.jpg",
     #               vessel_stl=["../Data/coronary/CAI_TIE_ZHU/CTA/CAI TIE ZHU_Left_002.stl",
     #                           "../Data/coronary/CAI_TIE_ZHU/CTA/CAI TIE ZHU_Right_002.stl"])

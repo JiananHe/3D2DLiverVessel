@@ -1,5 +1,5 @@
 import queue
-
+import numpy as np
 
 class segmentNode:
     def __init__(self):
@@ -231,7 +231,12 @@ def get_branches_points(root: segmentNode):
             else:
                 break
 
-    return branches_points
+    all_points = []
+    branch_index = []
+    for branch_points in branches_points:
+        all_points += branch_points
+        branch_index.append(len(branch_points))
+    return np.array(all_points), branch_index
 
 
 if __name__ == '__main__':

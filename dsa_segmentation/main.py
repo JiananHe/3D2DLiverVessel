@@ -66,15 +66,17 @@ def largest_connect_component(image, area_thresh):
     return lbl_img
 
 
-def skeletonize_image(image):
+def skeletonize_image(image, dilate=True, show=True):
     # dilate
-    dilated_image = cv2.dilate(image, np.ones((3, 3), np.uint8), iterations=1)
-    cv2.imshow("dilated", dilated_image)
+    if dilate:
+        image = cv2.dilate(image, np.ones((3, 3), np.uint8), iterations=1)
 
     # skeletonize
-    dilated_image = np.array(dilated_image / 255, np.uint8)
+    dilated_image = np.array(image / 255, np.uint8)
     skeletonized_image = morphology.skeletonize(dilated_image) + .0
-    cv2.imshow("skeletonized", skeletonized_image)
+
+    if show:
+        cv2.imshow("skeletonized", skeletonized_image)
 
     return np.array(skeletonized_image*255, np.uint8)
 

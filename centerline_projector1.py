@@ -37,31 +37,33 @@ def project_points(points, source, SID):
     return points
 
 
-def projector_main(branches_points, tx, ty, tz, rx, ry, rz, SID, SOD, nw, nh):
-    all_points = []
-    branch_index = []
-    for branch_points in branches_points:
-        all_points += branch_points
-        branch_index.append(len(branch_points))
-
-    all_points = np.array(all_points)
+def projector_main(all_points, tx, ty, tz, rx, ry, rz, SID, SOD, nw, nh):
     origin_3d = np.mean(all_points, axis=0)
     source_point = origin_3d - np.array([0, 0, SOD])
 
     tr_points = trans_rotate_points(all_points, origin_3d, tx, ty, tz, rx, ry, rz)
     pr_points = project_points(tr_points, source_point, SID)
 
-    return pr_points, branch_index
+    return pr_points
 
 
 if __name__ == '__main__':
     # root, _ = construct_tree_from_txt(r"data/vessel_centerline.txt")
-    # root, _ = construct_tree_from_txt("../Data/coronary/CAI_TIE_ZHU/CTA/CAI TIE ZHU_Left.txt", 1, 2, [9])
-    root, _ = construct_tree_from_txt("../Data/coronary/CAI_TIE_ZHU/CTA/CAI TIE ZHU_Right.txt", 3, 2, [4])
-    branches_points = get_branches_points(root)
+    root1, _ = construct_tree_from_txt("../Data/coronary/CAI_TIE_ZHU/CTA/CAI TIE ZHU_Left.txt", 1, 2, [9])
+    root2, _ = construct_tree_from_txt("../Data/coronary/CAI_TIE_ZHU/CTA/CAI TIE ZHU_Right.txt", 3, 2, [4])
+    branches_points1, branches_index1 = get_branches_points(root1)
+    branches_points2, branches_index2 = get_branches_points(root2)
 
     rx = 0; ry = 0; rz = 0
-    for rx in range(0, 361, 30):
-        projected, branch_index = projector_main(branches_points, 0, 0, 0, rx, ry, rz, 1300, 765, 512, 512)
-        show_branches(projected, branch_index, fix_color=False, show_window=False,
-                      window_save_name="%d-%d-%d.png" % (rx, ry, rz))
+    # for rx in range(0, 360, 30):
+    #     for ry in range(0, 360, 30):
+    #         projected = projector_main(branches_points1, 0, 0, 0, rx, ry, rz, 1000, 765, 512, 512)
+    #         show_branches(projected, branches_index1, (512, 512), fix_color=True, show_window=False,
+    #                       window_save_name="%d-%d-%d.png" % (rx, ry, rz),
+    #                       save_dir="../Data/coronary/CAI_TIE_ZHU/CTA/left_project")
+    for rx in range(0, 360, 30):
+        for ry in range(0, 360, 30):
+            projected = projector_main(branches_points2, 0, 0, 0, rx, ry, rz, 1000, 765, 512, 512)
+            show_branches(projected, branches_index2, (512, 512), fix_color=True, show_window=False,
+                          save_name="%d-%d-%d.png" % (rx, ry, rz),
+                          save_dir="../Data/coronary/CAI_TIE_ZHU/CTA/right_project")
