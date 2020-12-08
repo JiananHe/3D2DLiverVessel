@@ -2,7 +2,7 @@ import numpy as np
 import cv2
 import os
 from dsa_segmentation.main import skeletonize_image, show_image
-from centerline_projector1 import construct_tree_from_txt, get_branches_points, projector_main, show_branches
+from centerline_projector import construct_tree_from_txt, get_branches_points, projector_main, show_branches
 
 
 def centre_image(image, shape):
