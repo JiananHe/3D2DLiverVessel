@@ -1,6 +1,6 @@
 import numpy as np
 from centeline_tree_reader import construct_tree_from_txt, get_branches_points
-from centerline_show import show_branches
+from centerline_show import show_branches_3d, show_branches_2d
 import SimpleITK as sitk
 from dicom_parser import Image
 
@@ -43,8 +43,9 @@ def projector_main(all_points, tx, ty, tz, rx, ry, rz, SID, SOD, nw, nh):
 
     tr_points = trans_rotate_points(all_points, origin_3d, tx, ty, tz, rx, ry, rz)
     pr_points = project_points(tr_points, source_point, SID)
+    pr_source = source_point + np.array([0, 0, SID])
 
-    return pr_points
+    return pr_points[:-1, :], pr_source
 
 
 if __name__ == '__main__':
@@ -54,16 +55,16 @@ if __name__ == '__main__':
     branches_points1, branches_index1 = get_branches_points(root1)
     branches_points2, branches_index2 = get_branches_points(root2)
 
-    rx = 0; ry = 0; rz = 0
     # for rx in range(0, 360, 30):
     #     for ry in range(0, 360, 30):
     #         projected = projector_main(branches_points1, 0, 0, 0, rx, ry, rz, 1000, 765, 512, 512)
     #         show_branches(projected, branches_index1, (512, 512), fix_color=True, show_window=False,
     #                       window_save_name="%d-%d-%d.png" % (rx, ry, rz),
     #                       save_dir="../Data/coronary/CAI_TIE_ZHU/CTA/left_project")
-    for rx in range(0, 360, 30):
-        for ry in range(0, 360, 30):
-            projected = projector_main(branches_points2, 0, 0, 0, rx, ry, rz, 1000, 765, 512, 512)
-            show_branches(projected, branches_index2, (512, 512), fix_color=True, show_window=False,
-                          save_name="%d-%d-%d.png" % (rx, ry, rz),
-                          save_dir="../Data/coronary/CAI_TIE_ZHU/CTA/right_project")
+
+    tx=0; ty=0; tz=0; rx=0; ry=0; rz=0
+    for tx in range(0, 360, 30):
+        for tz in range(-360, 360, 30):
+            projected_vessel, projected_source = projector_main(branches_points2, tx, ty, tz, rx, ry, rz, 1000, 765, 512, 512)
+            show_branches_2d(projected_vessel, branches_index2, projected_source, [512, 512], [0.37, 0.37],
+                             bg_image_path="../Data/coronary/CAI_TIE_ZHU/DSA/IM000012_1.jpg", fix_color=True)

@@ -1,6 +1,7 @@
 import vtk
 import numpy as np
 import os
+import cv2
 from centeline_tree_reader import construct_tree_from_txt, get_branches_points
 np.random.seed(0)
 
@@ -41,7 +42,7 @@ def get_background_render(image_path):
     return image_data, background_renderer
 
 
-def show_branches(branches_points, branch_idx, show_shape, bg_image_path=None, fix_color=False, vessel_stl=None, liver_stl=None,
+def show_branches_3d(branches_points, branch_idx, show_shape, bg_image_path=None, fix_color=False, vessel_stl=None, liver_stl=None,
                   show_window=True, save_name=None, save_dir=None):
     lines_actors = []
     sid = 0
@@ -174,6 +175,39 @@ def show_branches(branches_points, branch_idx, show_shape, bg_image_path=None, f
     del render_window
 
 
+def show_branches_2d(branches_points, branch_idx, plane_centre, plane_size, plane_spacing, bg_image_path=None,
+                     fix_color=False, show=True, save_name=None, save_dir=None):
+    # plane_centre --> plane_size//2
+    points_coord = (branches_points - plane_centre)[:, :2] / plane_spacing + np.array(plane_size) // 2
+    points_coord = np.array(np.round(points_coord), dtype=np.int)
+    points_coord[:, 0][points_coord[:, 0] < 0] = 0
+    points_coord[:, 0][points_coord[:, 0] > plane_size[0] - 1] = plane_size[0] - 1
+    points_coord[:, 1][points_coord[:, 1] < 0] = 0
+    points_coord[:, 1][points_coord[:, 1] > plane_size[1] - 1] = plane_size[1] - 1
+
+    if bg_image_path is None:
+        plane_image = np.zeros([*plane_size, 3], dtype=np.uint8)
+    else:
+        plane_image = cv2.imread(bg_image_path, 1)
+    # cv2.circle(plane_image, (100, 200), 5, (0, 255, 0))
+    sid = 0
+    for bid in branch_idx:
+        branch_points = points_coord[sid: sid+bid]
+        sid += bid
+
+        color = [255, 255, 255]
+        if not fix_color:
+            color = (np.random.randint(0, 255), np.random.randint(0, 255), np.random.randint(0, 255))
+
+        pid = 0
+        while pid < len(branch_points) - 1:
+            cv2.line(plane_image, tuple(branch_points[pid]), tuple(branch_points[pid+1]), color)
+            pid += 1
+
+    cv2.imshow("projection", plane_image)
+    cv2.waitKey(0)
+
+
 if __name__ == '__main__':
     root1, _ = construct_tree_from_txt("../Data/coronary/CAI_TIE_ZHU/CTA/CAI TIE ZHU_Left.txt", 1, 2, [9])
     root2, _ = construct_tree_from_txt("../Data/coronary/CAI_TIE_ZHU/CTA/CAI TIE ZHU_Right.txt", 3, 2, [4])
@@ -181,7 +215,7 @@ if __name__ == '__main__':
     branches_points2, branches_index2 = get_branches_points(root2)
     # branches_points = branches_points1 + branches_points2
 
-    show_branches(branches_points1, branches_index1, (512, 512),
+    show_branches_3d(branches_points1, branches_index1, (512, 512),
                   vessel_stl=["../Data/coronary/CAI_TIE_ZHU/CTA/CAI TIE ZHU_Left_002.stl",
                               "../Data/coronary/CAI_TIE_ZHU/CTA/CAI TIE ZHU_Right_002.stl"])
     # show_branches(branches_points1, "../Data/coronary/CAI_TIE_ZHU/DSA/IM000001_1.jpg",

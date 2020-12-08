@@ -201,5 +201,5 @@ if __name__ == '__main__':
                                                                                         r"../LiverVesselData/Cao ShenFu/Cao ShenFu-DSA1  20200225/1/Cao ShenFu-DSA1_10.DCM",
                                                                                         r"../LiverVesselData/Cao ShenFu/CT CaoShenFu  20190307/vein",
                                                                                         tx, ty, tz, rx, ry, rz)
-    show_branches(projected_points, fix_color=False, show_window=True,
+    show_branches_3d(projected_points, fix_color=False, show_window=True,
                   window_save_name="%d-%d-%d-%d-%d-%d.png" % (tx, ty, tz, rx, ry, rz))
