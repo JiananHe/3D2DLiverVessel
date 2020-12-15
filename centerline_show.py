@@ -3,6 +3,7 @@ import numpy as np
 import os
 import cv2
 from centeline_tree_reader import construct_tree_from_txt, get_branches_points
+from dsa_segmentation.main import skeletonize_image
 np.random.seed(0)
 
 
@@ -175,36 +176,24 @@ def show_branches_3d(branches_points, branch_idx, show_shape, bg_image_path=None
     del render_window
 
 
-def show_branches_2d(branches_points, branch_idx, plane_centre, plane_size, plane_spacing, bg_image_path=None,
-                     fix_color=False, show=True, save_name=None, save_dir=None):
-    # plane_centre --> plane_size//2
-    points_coord = (branches_points - plane_centre)[:, :2] / plane_spacing + np.array(plane_size) // 2
-    points_coord = np.array(np.round(points_coord), dtype=np.int)
-    points_coord[:, 0][points_coord[:, 0] < 0] = 0
-    points_coord[:, 0][points_coord[:, 0] > plane_size[0] - 1] = plane_size[0] - 1
-    points_coord[:, 1][points_coord[:, 1] < 0] = 0
-    points_coord[:, 1][points_coord[:, 1] > plane_size[1] - 1] = plane_size[1] - 1
-
-    if bg_image_path is None:
-        plane_image = np.zeros([*plane_size, 3], dtype=np.uint8)
+def show_branches_2d(plane_centerline, dsa_image=None, dsa_segment=None, show=True, save_name=None, save_dir=None):
+    if dsa_image is None and dsa_segment is None:
+        image_to_show = plane_centerline
     else:
-        plane_image = cv2.imread(bg_image_path, 1)
-    # cv2.circle(plane_image, (100, 200), 5, (0, 255, 0))
-    sid = 0
-    for bid in branch_idx:
-        branch_points = points_coord[sid: sid+bid]
-        sid += bid
+        if dsa_image is not None:
+            image_to_show = cv2.imread(dsa_image, 1)
+        else:
+            image_to_show = np.zeros([*plane_centerline.shape, 3], dtype=np.uint8)
+        image_to_show[plane_centerline == 255] = np.array([255, 255, 255])
 
-        color = [255, 255, 255]
-        if not fix_color:
-            color = (np.random.randint(0, 255), np.random.randint(0, 255), np.random.randint(0, 255))
+        if dsa_segment is not None:
+            segment = cv2.imread(dsa_segment, 0)
+            segment[segment >= 200] = 255
+            segment[segment < 200] = 0
+            dsa_centerline = skeletonize_image(segment, show=False)
+            image_to_show[dsa_centerline == 255] = [0, 255, 255]
 
-        pid = 0
-        while pid < len(branch_points) - 1:
-            cv2.line(plane_image, tuple(branch_points[pid]), tuple(branch_points[pid+1]), color)
-            pid += 1
-
-    cv2.imshow("projection", plane_image)
+    cv2.imshow("projection", image_to_show)
     cv2.waitKey(0)
 
 

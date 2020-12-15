@@ -2,6 +2,7 @@ import numpy as np
 from centeline_tree_reader import construct_tree_from_txt, get_branches_points
 from centerline_show import show_branches_3d, show_branches_2d
 import SimpleITK as sitk
+import cv2
 from dicom_parser import Image
 
 
@@ -37,15 +38,59 @@ def project_points(points, source, SID):
     return points
 
 
-def projector_main(all_points, tx, ty, tz, rx, ry, rz, SID, SOD, nw, nh):
-    origin_3d = np.mean(all_points, axis=0)
+def get_plane_centerline(branches_points, branches_index, plane_centre, plane_size, plane_spacing):
+    # plane_centre --> plane_size//2
+    points_coord = (branches_points - plane_centre)[:, :2] / plane_spacing + np.array(plane_size) // 2
+    points_coord = np.array(np.round(points_coord), dtype=np.int)
+    points_coord[:, 0][points_coord[:, 0] < 0] = 0
+    points_coord[:, 0][points_coord[:, 0] > plane_size[0] - 1] = plane_size[0] - 1
+    points_coord[:, 1][points_coord[:, 1] < 0] = 0
+    points_coord[:, 1][points_coord[:, 1] > plane_size[1] - 1] = plane_size[1] - 1
+
+    plane_centerline = np.zeros(plane_size, dtype=np.uint8)
+    sid = 0
+    points_coord[:, [0, 1]] = points_coord[:, [1, 0]]  # exchange x and y to suit opencv
+    for bid in branches_index:
+        branch_coord = points_coord[sid: sid+bid]
+        sid += bid
+
+        pid = 0
+        while pid < len(branch_coord) - 1:
+            cv2.line(plane_centerline, tuple(branch_coord[pid]), tuple(branch_coord[pid+1]), 255)
+            pid += 1
+
+    return plane_centerline
+
+
+def projector_main(branches_points, branches_index, tx, ty, tz, rx, ry, rz, SID, SOD, nw, nh, sw, sh):
+    """
+    Project 3d centerline points onto the detector plane, the coordinate system is the origin 3d cs from CT.
+    The rotate centre is the origin 3d (mean coordinate of all 3d points).
+    :param branches_index:
+    :param branches_points: points in 3D coordinate system
+    :param tx: translation along x axis
+    :param ty: translation along y axis
+    :param tz: translation along z axis
+    :param rx: rotate round x axis
+    :param ry: rotate round y axis
+    :param rz: rotate round z axis
+    :param SID: the distance from the X-ray source to the detector plane
+    :param SOD: the distance from the X-ray source to the patient (origin 3d along the z axis)
+    :param nw: plane width
+    :param nh: plane height
+    :param sw: plane width spacing
+    :param sh: plane height spacing
+    :return: the centerline in the detector plane
+    """
+    origin_3d = np.mean(branches_points, axis=0)
     source_point = origin_3d - np.array([0, 0, SOD])
 
-    tr_points = trans_rotate_points(all_points, origin_3d, tx, ty, tz, rx, ry, rz)
+    tr_points = trans_rotate_points(branches_points, origin_3d, tx, ty, tz, rx, ry, rz)
     pr_points = project_points(tr_points, source_point, SID)
     pr_source = source_point + np.array([0, 0, SID])
+    plane_centerline = get_plane_centerline(pr_points, branches_index, pr_source, (nh, nw), (sh, sw))
 
-    return pr_points[:-1, :], pr_source
+    return plane_centerline
 
 
 if __name__ == '__main__':
@@ -62,9 +107,14 @@ if __name__ == '__main__':
     #                       window_save_name="%d-%d-%d.png" % (rx, ry, rz),
     #                       save_dir="../Data/coronary/CAI_TIE_ZHU/CTA/left_project")
 
-    tx=0; ty=0; tz=0; rx=0; ry=0; rz=0
-    for tx in range(0, 360, 30):
-        for tz in range(-360, 360, 30):
-            projected_vessel, projected_source = projector_main(branches_points2, tx, ty, tz, rx, ry, rz, 1000, 765, 512, 512)
-            show_branches_2d(projected_vessel, branches_index2, projected_source, [512, 512], [0.37, 0.37],
-                             bg_image_path="../Data/coronary/CAI_TIE_ZHU/DSA/IM000012_1.jpg", fix_color=True)
+    tx=0; ty=0; tz=0; rx=1.5; ry=0; rz=90
+    # for rx in [-30.1, 90-30.1, 180-30.1, 30.1, 90+30.1, 180+30.1]:
+    #     for ry in [-20.6, 90-20.6, 180-20.6, 20.6, 90+20.6, 180+20.6]:
+
+    for rx in [1.5, 90+1.5, 180+1.5, -1.5, 90-1.5, 180-1.5]:
+        for ry in [-22.4, 90-22.4, 180-22.4, 22.4, 90+22.4, 180+22.4]:
+            print(rx, ry)
+            plane_centerline = projector_main(branches_points1, branches_index1, tx, ty, tz, rx, ry, rz,
+                                              1000, 765, 512, 512, 0.37, 0.37)
+            show_branches_2d(plane_centerline, dsa_image="../Data/coronary/CAI_TIE_ZHU/DSA/IM000001_1.jpg",
+                             dsa_segment="../Data/coronary/CAI_TIE_ZHU/DSA/IM000001_1_seg.jpg")
