@@ -198,15 +198,15 @@ def show_branches_2d(plane_centerline, dsa_image=None, dsa_segment=None, show=Tr
 
 
 if __name__ == '__main__':
-    root1, _ = construct_tree_from_txt("../Data/coronary/CAI_TIE_ZHU/CTA/CAI TIE ZHU_Left.txt", 1, 2, [9])
-    root2, _ = construct_tree_from_txt("../Data/coronary/CAI_TIE_ZHU/CTA/CAI TIE ZHU_Right.txt", 3, 2, [4])
-    branches_points1, branches_index1 = get_branches_points(root1)
-    branches_points2, branches_index2 = get_branches_points(root2)
+    # root1, _ = construct_tree_from_txt("../Data/coronary/CAI_TIE_ZHU/CTA/CAI TIE ZHU_Left.txt", 1, 2, [9])
+    # root2, _ = construct_tree_from_txt("../Data/coronary/CAI_TIE_ZHU/CTA/CAI TIE ZHU_Right.txt", 3, 2, [4])
+    # branches_points1, branches_index1 = get_branches_points(root1)
+    # branches_points2, branches_index2 = get_branches_points(root2)
     # branches_points = branches_points1 + branches_points2
 
-    show_branches_3d(branches_points1, branches_index1, (512, 512),
-                  vessel_stl=["../Data/coronary/CAI_TIE_ZHU/CTA/CAI TIE ZHU_Left_002.stl",
-                              "../Data/coronary/CAI_TIE_ZHU/CTA/CAI TIE ZHU_Right_002.stl"])
+    # show_branches_3d(branches_points1, branches_index1, (512, 512),
+    #               vessel_stl=["../Data/coronary/CAI_TIE_ZHU/CTA/CAI TIE ZHU_Left_002.stl",
+    #                           "../Data/coronary/CAI_TIE_ZHU/CTA/CAI TIE ZHU_Right_002.stl"])
     # show_branches(branches_points1, "../Data/coronary/CAI_TIE_ZHU/DSA/IM000001_1.jpg",
     #               vessel_stl=["../Data/coronary/CAI_TIE_ZHU/CTA/CAI TIE ZHU_Left_002.stl",
     #                           "../Data/coronary/CAI_TIE_ZHU/CTA/CAI TIE ZHU_Right_002.stl"])
@@ -214,3 +214,7 @@ if __name__ == '__main__':
     # show_branches(branches_points2, vessel_stl="../Data/coronary/CAI_TIE_ZHU/CTA/CAI TIE ZHU_Right_002.stl")
 
     # show_branches(branches_points, "data/vessel.stl", "data/liver.stl")
+
+    root, _ = construct_tree_from_txt("/home/hja/Projects/3D2DRegister/ASOCA/Train_Masks_Centerline/20-left.txt", )
+    branches_points, branches_index = get_branches_points(root)
+    show_branches_3d(branches_points, branches_index, (512, 512), vessel_stl=["/home/hja/Projects/3D2DRegister/ASOCA/Train_Masks_STL/20_left.stl"])
