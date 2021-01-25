@@ -8,18 +8,18 @@ from skimage import measure
 # parameters
 tx = 0
 ty = 0
-tz = 0
-rx = 0
+tz = -500
+rx = -30
 ry = 0
 rz = 0
 cx = 0
 cy = 0
 cz = 0
 size2D = [512, 512, 1]
-spacing2D = [0.37, 0.37, 1.]
-focalLength = 1500.
-maxStepSize = 4.
-minStepSize = 1.
+spacing2D = [0.37, 0.37, 1]
+focalLength = 2000.
+# maxStepSize = 4.
+# minStepSize = 1.
 o2Dx = 0
 o2Dy = 0
 threshold = 0
@@ -39,25 +39,26 @@ def projector(image_3d_path, save_image_name=None):
     image = imageReader.GetOutput()
 
     # transform 3D image according to given parameters
-    transform = itk.Euler3DTransform[itk.D].New()
+    transform = itk.CenteredEuler3DTransform[itk.D].New()
     transform.SetComputeZYX(True)
     transform.SetTranslation((tx, ty, tx))
     transform.SetRotation(np.pi / 180.0 * rx, np.pi / 180.0 * ry, np.pi / 180.0 * rz)
 
     spacing_3d = image.GetSpacing()
     origin_3d = image.GetOrigin()
-    size_3d = image.GetBufferedRegion().GetSize()
+    image_region = image.GetBufferedRegion()
+    size_3d = image_region.GetSize()
     origin_volume = [origin_3d[i] + spacing_3d[i] * size_3d[i] / 2 for i in range(3)]
     rotate_center = [cx + origin_volume[0], cy + origin_volume[1], cz + origin_volume[2]]
     transform.SetCenter(rotate_center)
 
     # set attributes of projected plane (left upper)
     origin_2d = [
-        origin_3d[0] + o2Dx - spacing2D[0] * (size2D[0] - 1) / 2.0,
-        origin_3d[1] + o2Dy - spacing2D[1] * (size2D[1] - 1) / 2.0,
-        origin_3d[2] + focalLength / 2.0
+        origin_volume[0] + o2Dx - spacing2D[0] * (size2D[0] - 1) / 2.0,
+        origin_volume[1] + o2Dy - spacing2D[1] * (size2D[1] - 1) / 2.0,
+        origin_volume[2] + spacing2D[2] * size2D[2]
     ]
-    focal_point = [origin_3d[0], origin_3d[1], origin_3d[2] - focalLength / 2.0]
+    focal_point = [origin_volume[0], origin_volume[1], origin_volume[2] - focalLength / 2.0]
 
     # Ray Cast Interpolate
     interpolator = itk.RayCastInterpolateImageFunction[inter_image_type, itk.D].New()
@@ -77,6 +78,22 @@ def projector(image_3d_path, save_image_name=None):
     filter.Update()
 
     proj_raw_array = itk.GetArrayFromImage(filter.GetOutput())
+
+    # print informations
+    print("Volume image informations:")
+    print("tvolume image origin : ", origin_3d)
+    print("tvolume image size   : ", size_3d)
+    print("tvolume image spacing: ", spacing_3d)
+    print("tvolume image center : ", origin_volume)
+    print("Transform informations:")
+    print("ttranslation         : ", (tx, ty, tz))
+    print("trotation            : ", (rx, ry, rx))
+    print("tcenter               : ", rotate_center)
+    print("Interpolator informations: ")
+    print("tthreshold           : ", threshold)
+    print("tfocalPoint          : ", focal_point)
+    print("Filter informations:")
+    print("toutput origin        : ", origin_2d)
 
     if save_image_name is not None:
         proj_neg_array = proj_raw_array.max() - proj_raw_array
@@ -112,8 +129,8 @@ if __name__ == '__main__':
     # diff_image = sitk.GetImageFromArray(diff_projection)
     # diff_image.SetSpacing(spacing2D)
     # sitk.WriteImage(diff_image, "data/diff_projection.mhd")
-    mask_projection = projector("/home/hja/Projects/3D2DRegister/ASOCA/Train_Masks/0.nrrd", None)
-    # mask_projection = projector("/home/hja/Projects/3D2DRegister/ASOCA/Train_Masks_STL/0_left.nii", None)
+    # mask_projection = projector("/home/hja/Projects/3D2DRegister/ASOCA/Train_Masks/0.nrrd", None)
+    mask_projection = projector("/home/hja/Projects/3D2DRegister/ASOCA/Train_Masks_STL/0_right.nii", None)
     mask_projection = mask_projection[0] + .0
     print(mask_projection.shape)
     cv2.imshow("projection", mask_projection)

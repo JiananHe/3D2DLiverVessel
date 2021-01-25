@@ -53,8 +53,8 @@ def scale_centerline(image, lh, lw, height, width):
 
 # DSA
 # image = cv2.imread("../Data/coronary/CAI_TIE_ZHU/DSA/IM000001_1_seg.jpg", 0)
-# image = cv2.imread("../Data/coronary/CAI_TIE_ZHU/DSA/IM000008_1_seg.jpg", 0)
-image = cv2.imread("../Data/coronary/CAI_TIE_ZHU/DSA/IM000012_1_seg.jpg", 0)
+image = cv2.imread("../Data/coronary/CAI_TIE_ZHU/DSA/IM000008_1_seg.jpg", 0)
+# image = cv2.imread("../Data/coronary/CAI_TIE_ZHU/DSA/IM000012_1_seg.jpg", 0)
 image[image >= 200] = 255
 image[image < 200] = 0
 skeleton_image = skeletonize_image(image, dilate=False, show=False)
@@ -76,7 +76,7 @@ tx = 0; ty = 0; tz = 0; rx = 0; ry = 0; rz = 0
 for rx in range(0, 360, 30):
     for ry in range(0, 360, 30):
         for rz in range(0, 360, 30):
-            plane_centerline = projector_main(branches_points2, branches_index2, tx, ty, tz, rx, ry, rz,
+            plane_centerline = projector_main(branches_points1, branches_index1, tx, ty, tz, rx, ry, rz,
                                               1000, 765, 512, 512, 0.37, 0.37)
             # show_branches_2d(plane_centerline, dsa_image="../Data/coronary/CAI_TIE_ZHU/DSA/IM000001_1.jpg",
             #                  dsa_segment="../Data/coronary/CAI_TIE_ZHU/DSA/IM000001_1_seg.jpg")
@@ -94,8 +94,11 @@ for rx in range(0, 360, 30):
                 opt_trans = [rx, ry, rz, (lf[0] - dsa_offset[0])*0.37, (lf[1] - dsa_offset[1])*0.37]
 
 print("min score:", min_score, "opt: ", opt_trans)
-plane_centerline = projector_main(branches_points2, branches_index2, opt_trans[3], opt_trans[4], tz,
+plane_centerline = projector_main(branches_points1, branches_index1, opt_trans[3], opt_trans[4], tz,
                                   opt_trans[0], opt_trans[1], opt_trans[2], 1000, 765, 512, 512, 0.37, 0.37)
 show_branches_2d(plane_centerline)
-show_branches_2d(plane_centerline, dsa_image="../Data/coronary/CAI_TIE_ZHU/DSA/IM000012_1.jpg",
-                 dsa_segment="../Data/coronary/CAI_TIE_ZHU/DSA/IM000012_1_seg.jpg")
+show_branches_2d(plane_centerline, dsa_image="../Data/coronary/CAI_TIE_ZHU/DSA/IM000008_1.jpg",
+                 dsa_segment="../Data/coronary/CAI_TIE_ZHU/DSA/IM000008_1_seg.jpg")
+
+import scipy.io as sio
+sio.savemat("./data/IM000008_1_optimal_projection.mat", {"points": np.argwhere(plane_centerline == 255)})

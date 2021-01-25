@@ -212,7 +212,9 @@ if __name__ == '__main__':
 
     # dsa = cv2.imread(os.path.join(dsa_dir, f), 0)
     # cv2.imshow("dsa", dsa)
-    mask = cv2.imread("/home/hja/Projects/3D2DRegister/Data/coronary/CAI_TIE_ZHU/DSA/IM000001_1_seg.jpg", 0)
+    mask = cv2.imread("/home/hja/Projects/3D2DRegister/HeartDSA(高雨枫)/data/data/left/label/0.bmp", 0)
+    dsa = cv2.imread("/home/hja/Projects/3D2DRegister/HeartDSA(高雨枫)/data/data/left/train/0.bmp", 0)
+    cv2.imshow("dsa", dsa)
     mask[mask > 200] = 255
     mask[mask <= 200] = 0
     mask = np.pad(mask, 1)

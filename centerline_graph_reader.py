@@ -77,9 +77,10 @@ if __name__ == '__main__':
         segments_length.append(len(segment_points))
 
     all_points = np.array(all_points)
-    show_branches_3d(all_points, segments_length, (512, 512))
+    show_branches_3d(all_points, segments_length, (512, 512), vessel_stl=["/home/hja/Projects/3D2DRegister/ASOCA/Train_Masks_STL/0_right.stl"], fix_color=True)
 
+    # from centerline_projector import *
 
-
-
-
+    # plane_centerline = projector_main(all_points, segments_length, 0, 0, 0, -30, 0, 0,
+    #                                   1000, 765, 512, 512, 0.37, 0.37)
+    # show_branches_2d(plane_centerline)
